@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anaokulu Ödeme Takip Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- jsPDF and html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 1rem;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            background-color: #6366f1; /* indigo-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #4f46e5; /* indigo-600 */
+        }
+        .btn-secondary {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #4b5563; /* gray-700 */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db; /* gray-300 */
+        }
+        .btn-success {
+            background-color: #22c55e; /* green-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-success:hover {
+            background-color: #16a34a; /* green-600 */
+        }
+        .btn-danger {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        .btn-info {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-info:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            width: 100%;
+            margin-top: 0.25rem;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            border-color: #6366f1; /* indigo-500 */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+        }
+        th {
+            background-color: #f9fafb; /* gray-50 */
+            font-weight: 600;
+            color: #4b5563; /* gray-700 */
+        }
+        tr:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280; /* gray-500 */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1002;
+            font-weight: 500;
+            color: white;
+            display: none; /* Hidden by default */
+        }
+        .message-box.success {
+            background-color: #22c55e; /* green-500 */
+        }
+        .message-box.error {
+            background-color: #ef4444; /* red-500 */
+        }
+        .message-box.info {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        /* Receipt styles for PDF */
+        .receipt-container {
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .receipt-header h1 {
+            color: #6366f1;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .receipt-header p {
+            font-size: 14px;
+            color: #555;
+        }
+        .receipt-section {
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 10px;
+        }
+        .receipt-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .receipt-section h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+            border-left: 4px solid #6366f1;
+            padding-left: 8px;
+        }
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .receipt-item span:first-child {
+            font-weight: 500;
+            color: #444;
+        }
+        .receipt-summary {
+            margin-top: 20px;
+            border-top: 2px solid #6366f1;
+            padding-top: 15px;
+        }
+        .receipt-summary .receipt-item {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .receipt-footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Styles for two receipts side-by-side */
+        .two-receipts-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 20px;
+            width: 100%; /* Ensure it takes full width for A4 landscape */
+            box-sizing: border-box;
+        }
+        .two-receipts-container .receipt-container {
+            flex: 1;
+            min-width: 300px; /* Adjust as needed */
+            max-width: 45%; /* Adjust to fit two side by side */
+            box-shadow: none; /* Remove individual shadows for cleaner PDF */
+            border: 1px solid #eee; /* Light border for separation in PDF */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div id="app-container" class="container mx-auto p-4">
+        <!-- Uygulama içeriği buraya yüklenecek -->
+    </div>
+
+    <div id="loading-spinner" class="loading-spinner hidden"></div>
+    <div id="message-box" class="message-box"></div>
+    <div id="modal-container"></div>
+    <div id="receipt-template" style="display: none;"></div> <!-- Hidden div for PDF generation -->
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        // Firebase yapılandırma bilgilerinizi buraya yapıştırın.
+        // Firebase konsolunuzdan aldığınız firebaseConfig objesini kullanın.
+const firebaseConfig = {
+  apiKey: "AIzaSyCotSaLl6RGbgWfxQ7ipKqlLrQSBIxfF8Q",
+  authDomain: "anaokuluodeme.firebaseapp.com",
+  projectId: "anaokuluodeme",
+  storageBucket: "anaokuluodeme.firebasestorage.app",
+  messagingSenderId: "50092621825",
+  appId: "1:50092621825:web:5b0d9013b277b750144000"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+        let app;
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Uygulama durumu yönetimi
+        let appState = {
+            currentPage: 'login', // 'login', 'dashboard', 'students', 'studentDetails', 'classes', 'settings'
+            students: [],
+            payments: [],
+            classes: [], // New: Store class data
+            schoolName: 'Anaokulu Yönetim Sistemi', // Default school name
+            selectedStudent: null,
+            selectedClass: null, // New: For class page filtering
+            currentMonth: new Date().getMonth() + 1, // 1-12
+            currentYear: new Date().getFullYear(),
+            showModal: false,
+            modalContent: '', // 'addStudent', 'editPayment', 'confirmDelete', 'addClass', 'editClass', 'confirmReceipt'
+            modalData: null, // Data for the modal (e.g., student to edit, payment to edit)
+            message: { text: '', type: '' }, // For success/error messages
+            isLoading: false,
+            userRole: null // 'admin' or 'staff'
+        };
+
+        // DOM element referansları
+        const appContainer = document.getElementById('app-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const messageBox = document.getElementById('message-box');
+        const modalContainer = document.getElementById('modal-container');
+        const receiptTemplateDiv = document.getElementById('receipt-template');
+
+        // Yardımcı Fonksiyonlar
+        function showLoading() {
+            appState.isLoading = true;
+            loadingSpinner.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            appState.isLoading = false;
+            loadingSpinner.classList.add('hidden');
+        }
+
+        function showMessage(text, type = 'info', duration = 3000) {
+            appState.message = { text, type };
+            messageBox.textContent = text;
+            messageBox.className = `message-box ${type}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+                appState.message = { text: '', type: '' };
+            }, duration);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+        }
+
+        function generateUniqueId() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Modal Yönetimi
+        function openModal(content, data = null) {
+            appState.showModal = true;
+            appState.modalContent = content;
+            appState.modalData = data;
+            renderModal();
+        }
+
+        function closeModal() {
+            appState.showModal = false;
+            appState.modalContent = '';
+            appState.modalData = null;
+            modalContainer.innerHTML = '';
+        }
+
+        function renderModal() {
+            if (!appState.showModal) {
+                modalContainer.innerHTML = '';
+                return;
+            }
+
+            let modalHtml = `
+                <div class="modal">
+                    <div class="modal-content w-full md:w-3/4 lg:w-1/2">
+                        <span class="close-btn" onclick="closeModal()">&times;</span>
+                        <h2 class="text-2xl font-bold mb-4 text-indigo-600">`;
+
+            if (appState.modalContent === 'addStudent') {
+                modalHtml += 'Yeni Öğrenci Ekle';
+            } else if (appState.modalContent === 'editPayment') {
+                modalHtml += 'Ödeme Düzenle';
+            } else if (appState.modalContent === 'confirmDelete') {
+                modalHtml += 'Silme Onayı';
+            } else if (appState.modalContent === 'addAdHocPayment') {
+                modalHtml += 'Yeni Ödeme Ekle';
+            } else if (appState.modalContent === 'addClass') {
+                modalHtml += 'Yeni Sınıf Ekle';
+            } else if (appState.modalContent === 'editClass') {
+                modalHtml += 'Sınıf Adını Düzenle';
+            } else if (appState.modalContent === 'confirmReceipt') {
+                modalHtml += 'Makbuz Oluştur';
+            } else if (appState.modalContent === 'restoreBackup') {
+                modalHtml += 'Yedekten Geri Yükle';
+            }
+
+
+            modalHtml += `</h2>`;
+
+            if (appState.modalContent === 'addStudent') {
+                const student = appState.modalData || {};
+                modalHtml += `
+                    <form id="student-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="studentName" class="block text-sm font-medium text-gray-700">Öğrenci Adı</label>
+                            <input type="text" id="studentName" value="${student.name || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="studentSurname" class="block text-sm font-medium text-gray-700">Öğrenci Soyadı</label>
+                            <input type="text" id="studentSurname" value="${student.surname || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="studentClass" class="block text-sm font-medium text-gray-700">Sınıfı</label>
+                            <select id="studentClass" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <option value="">Sınıf Seçin</option>
+                                ${appState.classes.map(c => `<option value="${c.name}" ${student.class === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="motherName" class="block text-sm font-medium text-gray-700">Anne Adı</label>
+                            <input type="text" id="motherName" value="${student.motherName || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label for="fatherName" class="block text-sm font-medium text-gray-700">Baba Adı</label>
+                            <input type="text" id="fatherName" value="${student.fatherName || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label for="dob" class="block text-sm font-medium text-gray-700">Doğum Tarihi</label>
+                            <input type="date" id="dob" value="${student.dob || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Telefon Numarası</label>
+                            <input type="text" id="phone" value="${student.phone || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="md:col-span-2 mt-4">
+                            <h3 class="text-xl font-semibold mb-2 text-indigo-500">Ödeme Bilgileri</h3>
+                        </div>
+                        <div>
+                            <label for="monthlyFee" class="block text-sm font-medium text-gray-700">Aylık Ödeme Tutarı (TL)</label>
+                            <input type="number" id="monthlyFee" value="${student.monthlyFee || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        </div>
+                        <div>
+                            <label for="installmentCount" class="block text-sm font-medium text-gray-700">Taksit Sayısı</label>
+                            <input type="number" id="installmentCount" value="${student.installmentCount || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="1" required>
+                        </div>
+                        <div>
+                            <label for="stationeryFee" class="block text-sm font-medium text-gray-700">Kırtasiye Ödemesi (TL)</label>
+                            <input type="number" id="stationeryFee" value="${student.stationeryFee || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01">
+                        </div>
+                        <div>
+                            <label for="otherFees" class="block text-sm font-medium text-gray-700">Diğer Ödemeler (TL)</label>
+                            <input type="number" id="otherFees" value="${student.otherFees || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01">
+                        </div>
+                        <div class="md:col-span-2 flex justify-end space-x-3 mt-6">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                            <button type="submit" class="btn-primary">Kaydet</button>
+                        </div>
+                    </form>
+                `;
+            } else if (appState.modalContent === 'editPayment') {
+                const payment = appState.modalData;
+                modalHtml += `
+                    <form id="edit-payment-form">
+                        <div class="mb-4">
+                            <label for="editAmount" class="block text-sm font-medium text-gray-700">Ödeme Tutarı (TL)</label>
+                            <input type="number" id="editAmount" value="${payment.amount || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="editPaidAmount" class="block text-sm font-medium text-gray-700">Ödenen Tutar (TL)</label>
+                            <input type="number" id="editPaidAmount" value="${payment.paidAmount || 0}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="editPaidDate" class="block text-sm font-medium text-gray-700">Ödeme Tarihi</label>
+                            <input type="date" id="editPaidDate" value="${payment.paidDate || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                            <button type="submit" class="btn-primary">Kaydet</button>
+                        </div>
+                    </form>
+                `;
+            } else if (appState.modalContent === 'confirmDelete') {
+                modalHtml += `
+                    <p class="text-gray-700 mb-6">Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                        <button type="button" id="confirm-delete-btn" class="btn-danger">Sil</button>
+                    </div>
+                `;
+            } else if (appState.modalContent === 'addAdHocPayment') {
+                 modalHtml += `
+                    <form id="add-adhoc-payment-form">
+                        <div class="mb-4">
+                            <label for="adhocPaymentType" class="block text-sm font-medium text-gray-700">Ödeme Türü</label>
+                            <input type="text" id="adhocPaymentType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Örn: Gezi Ücreti" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="adhocAmount" class="block text-sm font-medium text-gray-700">Tutar (TL)</label>
+                            <input type="number" id="adhocAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="adhocDueDate" class="block text-sm font-medium text-gray-700">Son Ödeme Tarihi</label>
+                            <input type="date" id="adhocDueDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                            <button type="submit" class="btn-primary">Ekle</button>
+                        </div>
+                    </form>
+                `;
+            } else if (appState.modalContent === 'addClass') {
+                modalHtml += `
+                    <form id="add-class-form">
+                        <div class="mb-4">
+                            <label for="className" class="block text-sm font-medium text-gray-700">Sınıf Adı</label>
+                            <input type="text" id="className" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                            <button type="submit" class="btn-primary">Ekle</button>
+                        </div>
+                    </form>
+                `;
+            } else if (appState.modalContent === 'editClass') {
+                const classData = appState.modalData;
+                modalHtml += `
+                    <form id="edit-class-form">
+                        <div class="mb-4">
+                            <label for="editClassName" class="block text-sm font-medium text-gray-700">Sınıf Adı</label>
+                            <input type="text" id="editClassName" value="${classData.name || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                            <button type="submit" class="btn-primary">Kaydet</button>
+                        </div>
+                    </form>
+                `;
+            } else if (appState.modalContent === 'confirmReceipt') {
+                modalHtml += `
+                    <p class="text-gray-700 mb-6">Ödeme makbuzu oluşturmak ister misiniz?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">Hayır</button>
+                        <button type="button" id="generate-receipt-btn" class="btn-primary">Evet, Makbuz Oluştur</button>
+                    </div>
+                `;
+            } else if (appState.modalContent === 'restoreBackup') {
+                modalHtml += `
+                    <p class="text-gray-700 mb-6">Yedek dosyasını seçerek tüm verilerinizi geri yükleyebilirsiniz. Bu işlem mevcut verilerinizi silecek ve geri alınamaz olacaktır. Devam etmek istiyor musunuz?</p>
+                    <input type="file" id="backupFileInput" accept=".json" class="mb-4">
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">İptal</button>
+                        <button type="button" id="confirm-restore-btn" class="btn-danger" disabled>Geri Yükle</button>
+                    </div>
+                `;
+            }
+
+            modalHtml += `</div></div>`;
+            modalContainer.innerHTML = modalHtml;
+
+            // Add event listeners after rendering
+            if (appState.modalContent === 'addStudent') {
+                document.getElementById('student-form').addEventListener('submit', handleSaveStudent);
+            } else if (appState.modalContent === 'editPayment') {
+                document.getElementById('edit-payment-form').addEventListener('submit', handleUpdatePayment);
+            } else if (appState.modalContent === 'confirmDelete') {
+                document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+                    if (appState.modalData.type === 'student') {
+                        deleteStudent(appState.modalData.id);
+                    } else if (appState.modalData.type === 'payment') {
+                        deletePayment(appState.modalData.id);
+                    } else if (appState.modalData.type === 'class') {
+                        deleteClass(appState.modalData.id);
+                    }
+                    closeModal();
+                });
+            } else if (appState.modalContent === 'addAdHocPayment') {
+                document.getElementById('add-adhoc-payment-form').addEventListener('submit', handleAddAdHocPayment);
+            } else if (appState.modalContent === 'addClass') {
+                document.getElementById('add-class-form').addEventListener('submit', handleAddClass);
+            } else if (appState.modalContent === 'editClass') {
+                document.getElementById('edit-class-form').addEventListener('submit', handleEditClass);
+            } else if (appState.modalContent === 'confirmReceipt') {
+                document.getElementById('generate-receipt-btn').addEventListener('click', () => {
+                    generateReceiptPdf(appState.modalData.paymentId);
+                    closeModal();
+                });
+            } else if (appState.modalContent === 'restoreBackup') {
+                const backupFileInput = document.getElementById('backupFileInput');
+                const confirmRestoreBtn = document.getElementById('confirm-restore-btn');
+                backupFileInput.addEventListener('change', () => {
+                    if (backupFileInput.files.length > 0) {
+                        confirmRestoreBtn.disabled = false;
+                    } else {
+                        confirmRestoreBtn.disabled = true;
+                    }
+                });
+                confirmRestoreBtn.addEventListener('click', () => {
+                    handleRestoreBackup(backupFileInput.files[0]);
+                });
+            }
+        }
+
+        // --- Firebase İşlemleri ---
+
+        async function initializeFirebase() {
+            try {
+                showLoading();
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // initialAuthToken Canvas ortamına özeldir, harici dağıtımda kullanılmaz.
+                // Bu nedenle doğrudan anonim olarak oturum açmayı deniyoruz.
+                await signInAnonymously(auth);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        // Eğer login sayfasındaysa, dashboard'a yönlendir
+                        if (appState.currentPage === 'login') {
+                            navigateTo('dashboard');
+                        }
+                        // Firestore dinleyicilerini başlat
+                        setupFirestoreListeners();
+                    } else {
+                        // Kullanıcı yoksa (veya oturum kapatıldıysa), login sayfasına yönlendir
+                        userId = null;
+                        isAuthReady = false;
+                        console.log("Firebase Auth Not Ready. No User.");
+                        navigateTo('login');
+                    }
+                    hideLoading();
+                });
+
+            } catch (error) {
+                console.error("Firebase başlatılırken hata oluştu:", error);
+                showMessage("Uygulama başlatılırken bir hata oluştu.", "error");
+                hideLoading();
+            }
+        }
+
+        function setupFirestoreListeners() {
+            if (!isAuthReady || !userId) {
+                console.warn("Firestore dinleyicileri başlatılamadı: Auth hazır değil veya userId yok.");
+                return;
+            }
+
+            // Öğrenci koleksiyonu dinleyicisi
+            const studentsColRef = collection(db, `artifacts/${appId}/users/${userId}/students`);
+            onSnapshot(studentsColRef, (snapshot) => {
+                const updatedStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                appState.students = updatedStudents;
+                console.log("Öğrenciler güncellendi:", appState.students);
+                renderApp(); // Öğrenci listesi güncellendiğinde sayfayı yeniden çiz
+            }, (error) => {
+                console.error("Öğrenci verileri alınırken hata oluştu:", error);
+                showMessage("Öğrenci verileri yüklenirken bir sorun oluştu. Lütfen Firebase güvenlik kurallarınızı kontrol edin.", "error");
+            });
+
+            // Ödeme koleksiyonu dinleyicisi
+            const paymentsColRef = collection(db, `artifacts/${appId}/users/${userId}/payments`);
+            onSnapshot(paymentsColRef, (snapshot) => {
+                const updatedPayments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                appState.payments = updatedPayments;
+                console.log("Ödemeler güncellendi:", appState.payments);
+                renderApp(); // Ödeme listesi güncellendiğinde sayfayı yeniden çiz
+            }, (error) => {
+                console.error("Ödeme verileri alınırken hata oluştu:", error);
+                showMessage("Ödeme verileri yüklenirken bir sorun oluştu. Lütfen Firebase güvenlik kurallarınızı kontrol edin.", "error");
+            });
+
+            // Sınıf koleksiyonu dinleyicisi
+            const classesColRef = collection(db, `artifacts/${appId}/users/${userId}/classes`);
+            onSnapshot(classesColRef, (snapshot) => {
+                const updatedClasses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                appState.classes = updatedClasses;
+                console.log("Sınıflar güncellendi:", appState.classes);
+                renderApp();
+            }, (error) => {
+                console.error("Sınıf verileri alınırken hata oluştu:", error);
+                showMessage("Sınıf verileri yüklenirken bir sorun oluştu. Lütfen Firebase güvenlik kurallarınızı kontrol edin.", "error");
+            });
+
+            // Okul adı dinleyicisi
+            const schoolInfoDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings/schoolInfo`);
+            onSnapshot(schoolInfoDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appState.schoolName = docSnap.data().name;
+                } else {
+                    appState.schoolName = 'Anaokulu Yönetim Sistemi'; // Default if not set
+                }
+                console.log("Okul adı güncellendi:", appState.schoolName);
+                renderApp();
+            }, (error) => {
+                console.error("Okul adı alınırken hata oluştu:", error);
+                showMessage("Okul adı yüklenirken bir sorun oluştu.", "error");
+            });
+        }
+
+        async function addStudent(studentData) {
+            showLoading();
+            try {
+                const studentRef = await addDoc(collection(db, `artifacts/${appId}/users/${userId}/students`), studentData);
+                console.log("Öğrenci eklendi:", studentRef.id);
+
+                // İlk ödemeleri oluştur
+                const paymentsToAdd = [];
+                const actualMonthlyPaymentAmount = studentData.monthlyFee;
+                const today = new Date();
+
+                // Aylık taksitler
+                for (let i = 0; i < studentData.installmentCount; i++) {
+                    // Taksitlerin son ödeme tarihlerini mevcut aydan başlayarak ayın 15'i olarak belirle
+                    const dueDate = new Date(today.getFullYear(), today.getMonth() + i, 15); // Her ayın 15'i
+                    paymentsToAdd.push({
+                        studentId: studentRef.id,
+                        type: `Aylık Taksit (${i + 1}/${studentData.installmentCount})`,
+                        amount: actualMonthlyPaymentAmount, // Her taksit için aylık ödeme tutarını kullan
+                        dueDate: dueDate.toISOString().split('T')[0], // YYYY-MM-DD formatında
+                        paidAmount: 0,
+                        paidDate: '',
+                        isPaid: false
+                    });
+                }
+
+                // Kırtasiye ödemesi (varsa)
+                if (studentData.stationeryFee > 0) {
+                    paymentsToAdd.push({
+                        studentId: studentRef.id,
+                        type: 'Kırtasiye Ücreti',
+                        amount: studentData.stationeryFee,
+                        dueDate: new Date(today.getFullYear(), today.getMonth(), 20).toISOString().split('T')[0], // Bu ayın 20'si
+                        paidAmount: 0,
+                        paidDate: '',
+                        isPaid: false
+                    });
+                }
+
+                // Diğer ödemeler (varsa)
+                if (studentData.otherFees > 0) {
+                    paymentsToAdd.push({
+                        studentId: studentRef.id,
+                        type: 'Diğer Ücretler',
+                        amount: studentData.otherFees,
+                        dueDate: new Date(today.getFullYear(), today.getMonth(), 25).toISOString().split('T')[0], // Bu ayın 25'i
+                        paidAmount: 0,
+                        paidDate: '',
+                        isPaid: false
+                    });
+                }
+
+                for (const payment of paymentsToAdd) {
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/payments`), payment);
+                }
+                showMessage("Öğrenci ve ödemeleri başarıyla eklendi!", "success");
+                closeModal();
+                navigateTo('students');
+            } catch (e) {
+                console.error("Öğrenci eklenirken hata oluştu: ", e);
+                showMessage("Öğrenci eklenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateStudent(studentId, studentData) {
+            showLoading();
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/students`, studentId), studentData);
+                showMessage("Öğrenci bilgileri başarıyla güncellendi!", "success");
+                closeModal();
+                navigateTo('studentDetails', studentId);
+            } catch (e) {
+                console.error("Öğrenci güncellenirken hata oluştu: ", e);
+                showMessage("Öğrenci güncellenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteStudent(studentId) {
+            showLoading();
+            try {
+                // Öğrenciye ait tüm ödemeleri sil
+                const q = query(collection(db, `artifacts/${appId}/users/${userId}/payments`), where("studentId", "==", studentId));
+                const querySnapshot = await getDocs(q);
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                await Promise.all(deletePromises);
+
+                // Öğrenciyi sil
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/students`, studentId));
+                showMessage("Öğrenci ve tüm ödemeleri başarıyla silindi!", "success");
+                navigateTo('students');
+            } catch (e) {
+                console.error("Öğrenci silinirken hata oluştu: ", e);
+                showMessage("Öğrenci silinirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updatePaymentStatus(paymentId, isPaid) {
+            showLoading();
+            try {
+                const paymentRef = doc(db, `artifacts/${appId}/users/${userId}/payments`, paymentId);
+                const paidDate = isPaid ? new Date().toISOString().split('T')[0] : '';
+                const paymentToUpdate = appState.payments.find(p => p.id === paymentId);
+                const paidAmount = isPaid ? (paymentToUpdate?.amount || 0) : 0; // Eğer ödendi ise tam miktar ödenmiş say
+
+                await updateDoc(paymentRef, { isPaid: isPaid, paidDate: paidDate, paidAmount: paidAmount });
+                showMessage("Ödeme durumu güncellendi!", "success");
+
+                // Makbuz sorma
+                if (isPaid) {
+                    openModal('confirmReceipt', { paymentId: paymentId });
+                }
+
+            } catch (e) {
+                console.error("Ödeme durumu güncellenirken hata oluştu: ", e);
+                showMessage("Ödeme durumu güncellenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updatePayment(paymentId, updatedData) {
+            showLoading();
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/payments`, paymentId), updatedData);
+                showMessage("Ödeme bilgileri başarıyla güncellendi!", "success");
+                closeModal();
+            } catch (e) {
+                console.error("Ödeme güncellenirken hata oluştu: ", e);
+                showMessage("Ödeme güncellenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deletePayment(paymentId) {
+            showLoading();
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/payments`, paymentId));
+                showMessage("Ödeme başarıyla silindi!", "success");
+            } catch (e) {
+                console.error("Ödeme silinirken hata oluştu: ", e);
+                showMessage("Ödeme silinirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function addAdHocPayment(studentId, paymentData) {
+            showLoading();
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/payments`), {
+                    studentId: studentId,
+                    type: paymentData.type,
+                    amount: paymentData.amount,
+                    dueDate: paymentData.dueDate,
+                    paidAmount: 0,
+                    paidDate: '',
+                    isPaid: false
+                });
+                showMessage("Ek ödeme başarıyla eklendi!", "success");
+                closeModal();
+            } catch (e) {
+                console.error("Ek ödeme eklenirken hata oluştu: ", e);
+                showMessage("Ek ödeme eklenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- Class Management Functions ---
+        async function addClass(className) {
+            showLoading();
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/classes`), { name: className });
+                showMessage("Sınıf başarıyla eklendi!", "success");
+                closeModal();
+            } catch (e) {
+                console.error("Sınıf eklenirken hata oluştu: ", e);
+                showMessage("Sınıf eklenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateClass(classId, newName) {
+            showLoading();
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/classes`, classId), { name: newName });
+                showMessage("Sınıf adı başarıyla güncellendi!", "success");
+                closeModal();
+            } catch (e) {
+                console.error("Sınıf adı güncellenirken hata oluştu: ", e);
+                showMessage("Sınıf adı güncellenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteClass(classId) {
+            showLoading();
+            try {
+                // Check if there are any students in this class before deleting
+                const studentsInClass = appState.students.filter(s => s.class === appState.classes.find(c => c.id === classId)?.name);
+                if (studentsInClass.length > 0) {
+                    showMessage("Bu sınıfa kayıtlı öğrenciler olduğu için sınıf silinemez. Lütfen önce öğrencileri başka bir sınıfa taşıyın veya silin.", "error", 5000);
+                    return;
+                }
+
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/classes`, classId));
+                showMessage("Sınıf başarıyla silindi!", "success");
+            } catch (e) {
+                console.error("Sınıf silinirken hata oluştu: ", e);
+                showMessage("Sınıf silinirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateSchoolName(newName) {
+            showLoading();
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/schoolInfo`), { name: newName });
+                showMessage("Okul adı başarıyla güncellendi!", "success");
+            } catch (e) {
+                console.error("Okul adı güncellenirken hata oluştu:", e);
+                showMessage("Okul adı güncellenirken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- Backup/Restore Functions ---
+        async function backupData() {
+            showLoading();
+            try {
+                const backupData = {
+                    schoolName: appState.schoolName,
+                    classes: appState.classes,
+                    students: appState.students,
+                    payments: appState.payments
+                };
+
+                const jsonString = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `anaokulu_yedek_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showMessage("Veriler başarıyla yedeklendi!", "success");
+            } catch (error) {
+                console.error("Yedekleme sırasında hata oluştu:", error);
+                showMessage("Yedekleme sırasında bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function handleRestoreBackup(file) {
+            if (!file) {
+                showMessage("Lütfen bir yedek dosyası seçin.", "error");
+                return;
+            }
+
+            showLoading();
+            try {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+
+                        // Confirm with user before destructive restore
+                        const confirmRestore = true; // Modal handles confirmation
+                        if (confirmRestore) {
+                            // Clear existing data (students, payments, classes, settings)
+                            await clearCollection(`artifacts/${appId}/users/${userId}/students`);
+                            await clearCollection(`artifacts/${appId}/users/${userId}/payments`);
+                            await clearCollection(`artifacts/${appId}/users/${userId}/classes`);
+                            // Settings is a single doc, just overwrite
+                            await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/schoolInfo`));
+
+
+                            // Restore data
+                            if (data.schoolName) {
+                                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/schoolInfo`), { name: data.schoolName });
+                            }
+                            for (const cls of data.classes) {
+                                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/classes`, cls.id), cls);
+                            }
+                            for (const student of data.students) {
+                                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/students`, student.id), student);
+                            }
+                            for (const payment of data.payments) {
+                                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/payments`, payment.id), payment);
+                            }
+
+                            showMessage("Veriler başarıyla geri yüklendi!", "success");
+                            closeModal();
+                            navigateTo('dashboard'); // Go to dashboard after restore
+                        }
+                    } catch (parseError) {
+                        console.error("Yedek dosyası okunurken/ayrıştırılırken hata oluştu:", parseError);
+                        showMessage("Geçersiz yedek dosyası formatı.", "error");
+                    } finally {
+                        hideLoading();
+                    }
+                };
+                reader.readAsText(file);
+            } catch (error) {
+                console.error("Geri yükleme sırasında hata oluştu:", error);
+                showMessage("Geri yükleme sırasında bir hata oluştu.", "error");
+                hideLoading();
+            }
+        }
+
+        async function clearCollection(collectionPath) {
+            const q = query(collection(db, collectionPath));
+            const querySnapshot = await getDocs(q);
+            const deletePromises = [];
+            querySnapshot.forEach((doc) => {
+                deletePromises.push(deleteDoc(doc.ref));
+            });
+            await Promise.all(deletePromises);
+        }
+
+
+        // --- Sayfa Yönlendirme ve Render İşlemleri ---
+
+        function navigateTo(page, data = null) {
+            // Staff user access control
+            if (appState.userRole === 'staff') {
+                if (page === 'studentDetails' || page === 'settings') {
+                    showMessage("Bu sayfaya erişim izniniz yok.", "error");
+                    page = 'dashboard'; // Redirect to dashboard
+                }
+            }
+
+            appState.currentPage = page;
+            appState.selectedStudent = null; // Her sayfa geçişinde seçili öğrenciyi sıfırla
+            appState.selectedClass = null; // Reset selected class
+            if (page === 'studentDetails' && data) {
+                appState.selectedStudent = appState.students.find(s => s.id === data);
+            } else if (page === 'classes' && data) {
+                 appState.selectedClass = appState.classes.find(c => c.id === data);
+            }
+            renderApp();
+        }
+
+        function renderApp() {
+            if (!isAuthReady) {
+                appContainer.innerHTML = '<div class="text-center text-lg text-gray-600 mt-20">Yükleniyor...</div>';
+                return;
+            }
+
+            if (appState.currentPage === 'login') {
+                renderLoginPage();
+            } else if (appState.currentPage === 'dashboard') {
+                renderDashboardPage();
+            } else if (appState.currentPage === 'students') {
+                renderStudentsPage();
+            } else if (appState.currentPage === 'studentDetails') {
+                renderStudentDetailsPage();
+            } else if (appState.currentPage === 'classes') {
+                renderClassesPage();
+            } else if (appState.currentPage === 'settings') {
+                renderSettingsPage();
+            }
+        }
+
+        // --- Ortak Navbar ---
+        function getNavbarHtml() {
+            return `
+                <nav class="bg-indigo-700 p-4 rounded-b-xl shadow-lg mb-6 flex justify-between items-center flex-wrap">
+                    <h1 class="text-white text-2xl font-bold mb-2 md:mb-0">${appState.schoolName}</h1>
+                    <div class="flex space-x-4 flex-wrap gap-2">
+                        <button onclick="navigateTo('dashboard')" class="btn-secondary bg-indigo-500 hover:bg-indigo-600 text-white"><i class="fas fa-home mr-2"></i>Anasayfa</button>
+                        <button onclick="navigateTo('students')" class="btn-secondary bg-indigo-500 hover:bg-indigo-600 text-white"><i class="fas fa-users mr-2"></i>Öğrenciler</button>
+                        ${appState.userRole === 'admin' ? `
+                            <button onclick="navigateTo('classes')" class="btn-secondary bg-indigo-500 hover:bg-indigo-600 text-white"><i class="fas fa-chalkboard-teacher mr-2"></i>Sınıflar</button>
+                            <button onclick="navigateTo('settings')" class="btn-secondary bg-indigo-500 hover:bg-indigo-600 text-white"><i class="fas fa-cog mr-2"></i>Ayarlar</button>
+                        ` : `
+                            <button onclick="navigateTo('classes')" class="btn-secondary bg-indigo-500 hover:bg-indigo-600 text-white"><i class="fas fa-chalkboard-teacher mr-2"></i>Sınıflar</button>
+                        `}
+                        <button onclick="handleLogout()" class="btn-secondary bg-red-500 hover:bg-red-600 text-white"><i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap</button>
+                    </div>
+                </nav>
+            `;
+        }
+
+        // --- Login Sayfası ---
+        function renderLoginPage() {
+            appContainer.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600">
+                    <div class="card w-full max-w-md p-8 bg-white rounded-xl shadow-2xl">
+                        <h2 class="text-3xl font-bold text-center text-indigo-700 mb-8">Giriş Yap</h2>
+                        <form id="login-form">
+                            <div class="mb-4">
+                                <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Kullanıcı Adı</label>
+                                <input type="text" id="username" value="admin" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Kullanıcı Adınız" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Parola</label>
+                                <input type="password" id="password" value="admin" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Parolanız" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full py-3 text-lg">Giriş Yap</button>
+                        </form>
+                        <p class="text-center text-gray-500 text-sm mt-6">Demo için kullanıcı adı: <strong>admin</strong>, parola: <strong>admin</strong></p>
+                        <p class="text-center text-gray-500 text-sm mt-2">Personel girişi için: kullanıcı adı: <strong>staff</strong>, parola: <strong>staff</strong></p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Basit demo kimlik doğrulama
+            if (username === 'admin' && password === 'admin') {
+                appState.userRole = 'admin';
+                showMessage("Giriş başarılı! (Admin)", "success");
+                navigateTo('dashboard');
+            } else if (username === 'staff' && password === 'staff') {
+                appState.userRole = 'staff';
+                showMessage("Giriş başarılı! (Personel)", "success");
+                navigateTo('dashboard');
+            }
+            else {
+                showMessage("Kullanıcı adı veya parola yanlış!", "error");
+            }
+        }
+
+        // --- Dashboard Sayfası ---
+        function renderDashboardPage() {
+            const currentMonthName = new Date(appState.currentYear, appState.currentMonth - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+            const monthlyPayments = appState.payments.filter(p => {
+                const dueDate = new Date(p.dueDate);
+                return dueDate.getMonth() + 1 === appState.currentMonth && dueDate.getFullYear() === appState.currentYear;
+            });
+
+            let totalExpected = 0;
+            let totalPaid = 0;
+            let totalUnpaid = 0;
+
+            monthlyPayments.forEach(p => {
+                totalExpected += p.amount;
+                totalPaid += p.paidAmount || 0;
+            });
+            totalUnpaid = totalExpected - totalPaid;
+
+            const studentsWithPayments = monthlyPayments.reduce((acc, payment) => {
+                const student = appState.students.find(s => s.id === payment.studentId);
+                if (student) {
+                    if (!acc[student.id]) {
+                        acc[student.id] = { ...student, payments: [] };
+                    }
+                    acc[student.id].payments.push(payment);
+                }
+                return acc;
+            }, {});
+
+            const sortedStudentsWithPayments = Object.values(studentsWithPayments).sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+
+            appContainer.innerHTML = `
+                ${getNavbarHtml()}
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="card bg-indigo-100 text-indigo-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Beklenen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalExpected)}</p>
+                    </div>
+                    <div class="card bg-green-100 text-green-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Ödenen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalPaid)}</p>
+                    </div>
+                    <div class="card bg-red-100 text-red-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Ödenmeyen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalUnpaid)}</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-bold text-indigo-600 mb-4">Öğrenci Ara</h2>
+                    <input type="text" id="student-search-input" onkeyup="filterStudentsDashboard()" placeholder="Öğrenci adı veya soyadı ile ara..." class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <div id="search-results" class="mt-4"></div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <h2 class="text-2xl font-bold text-indigo-600">Bu Ayın Ödemeleri: ${currentMonthName}</h2>
+                        <div class="flex space-x-2 mt-2 md:mt-0">
+                            <button onclick="changeMonth(-1)" class="btn-secondary"><i class="fas fa-chevron-left"></i> Önceki Ay</button>
+                            <button onclick="changeMonth(1)" class="btn-secondary">Sonraki Ay <i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    ${sortedStudentsWithPayments.length === 0 ? '<p class="text-gray-600">Bu ay için ödeme bulunmamaktadır.</p>' : `
+                        <table class="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4">Öğrenci</th>
+                                    <th class="py-3 px-4">Sınıf</th>
+                                    <th class="py-3 px-4">Ödeme Kalemi</th>
+                                    <th class="py-3 px-4">Beklenen Tutar</th>
+                                    <th class="py-3 px-4">Ödenen Tutar</th>
+                                    <th class="py-3 px-4">Kalan Tutar</th>
+                                    <th class="py-3 px-4">Durum</th>
+                                    <th class="py-3 px-4">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedStudentsWithPayments.map(student => `
+                                    ${student.payments.map(payment => `
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-3 px-4 font-medium text-indigo-600 cursor-pointer hover:underline" onclick="navigateTo('studentDetails', '${student.id}')">${student.name} ${student.surname}</td>
+                                            <td class="py-3 px-4">${student.class}</td>
+                                            <td class="py-3 px-4">${payment.type}</td>
+                                            <td class="py-3 px-4">${formatCurrency(payment.amount)}</td>
+                                            <td class="py-3 px-4">${formatCurrency(payment.paidAmount || 0)}</td>
+                                            <td class="py-3 px-4">${formatCurrency(payment.amount - (payment.paidAmount || 0))}</td>
+                                            <td class="py-3 px-4">
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold ${payment.isPaid ? 'bg-green-200 text-green-800' : (payment.paidAmount > 0 ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800')}">
+                                                    ${payment.isPaid ? 'Ödendi' : (payment.paidAmount > 0 ? 'Kısmi Ödeme' : 'Ödenmedi')}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 space-x-2 flex flex-wrap gap-2">
+                                                <button onclick="updatePaymentStatus('${payment.id}', ${!payment.isPaid})" class="btn-success ${payment.isPaid ? 'opacity-50 cursor-not-allowed' : ''}" ${payment.isPaid ? 'disabled' : ''}>
+                                                    <i class="fas fa-check"></i> Ödendi
+                                                </button>
+                                                ${appState.userRole === 'admin' ? `
+                                                    <button onclick="openModal('editPayment', ${JSON.stringify(payment).replace(/"/g, '&quot;')})" class="btn-info">
+                                                        <i class="fas fa-edit"></i> Düzenle
+                                                    </button>
+                                                    <button onclick="openModal('confirmDelete', { type: 'payment', id: '${payment.id}' })" class="btn-danger">
+                                                        <i class="fas fa-trash"></i> Sil
+                                                    </button>
+                                                ` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+                </div>
+            `;
+        }
+
+        function filterStudentsDashboard() {
+            const searchTerm = document.getElementById('student-search-input').value.toLowerCase();
+            const searchResultsDiv = document.getElementById('search-results');
+            searchResultsDiv.innerHTML = '';
+
+            if (searchTerm.length < 2) return; // En az 2 karakter girilince ara
+
+            const filteredStudents = appState.students.filter(student =>
+                student.name.toLowerCase().includes(searchTerm) ||
+                student.surname.toLowerCase().includes(searchTerm)
+            ).sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+
+            if (filteredStudents.length > 0) {
+                searchResultsDiv.innerHTML = `
+                    <ul class="bg-white rounded-lg shadow-md border border-gray-200">
+                        ${filteredStudents.map(student => `
+                            <li class="p-3 border-b border-gray-200 last:border-b-0 cursor-pointer hover:bg-gray-50 flex justify-between items-center" onclick="navigateTo('studentDetails', '${student.id}')">
+                                <span>${student.name} ${student.surname} <span class="text-gray-500 text-sm">(${student.class})</span></span>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                searchResultsDiv.innerHTML = `<p class="text-gray-600 p-3">Öğrenci bulunamadı.</p>`;
+            }
+        }
+
+        function changeMonth(direction) {
+            appState.currentMonth += direction;
+            if (appState.currentMonth > 12) {
+                appState.currentMonth = 1;
+                appState.currentYear++;
+            } else if (appState.currentMonth < 1) {
+                appState.currentMonth = 12;
+                appState.currentYear--;
+            }
+            renderApp();
+        }
+
+        // --- Öğrenciler Sayfası ---
+        function renderStudentsPage() {
+            const sortedStudents = [...appState.students].sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+
+            appContainer.innerHTML = `
+                ${getNavbarHtml()}
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <h2 class="text-2xl font-bold text-indigo-600">Tüm Öğrenciler</h2>
+                        ${appState.userRole === 'admin' ? `
+                            <button onclick="openModal('addStudent')" class="btn-primary mt-2 md:mt-0"><i class="fas fa-plus-circle mr-2"></i>Öğrenci Ekle</button>
+                        ` : ''}
+                    </div>
+                    ${sortedStudents.length === 0 ? '<p class="text-gray-600">Henüz kayıtlı öğrenci bulunmamaktadır.</p>' : `
+                        <table class="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4">Adı Soyadı</th>
+                                    <th class="py-3 px-4">Sınıfı</th>
+                                    <th class="py-3 px-4">Telefon</th>
+                                    ${appState.userRole === 'admin' ? `<th class="py-3 px-4">İşlemler</th>` : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedStudents.map(student => `
+                                    <tr class="border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="navigateTo('studentDetails', '${student.id}')">
+                                        <td class="py-3 px-4 font-medium text-indigo-600">${student.name} ${student.surname}</td>
+                                        <td class="py-3 px-4">${student.class}</td>
+                                        <td class="py-3 px-4">${student.phone}</td>
+                                        ${appState.userRole === 'admin' ? `
+                                            <td class="py-3 px-4">
+                                                <button onclick="event.stopPropagation(); openModal('addStudent', ${JSON.stringify(student).replace(/"/g, '&quot;')})" class="btn-info mr-2">
+                                                    <i class="fas fa-edit"></i> Düzenle
+                                                </button>
+                                                <button onclick="event.stopPropagation(); openModal('confirmDelete', { type: 'student', id: '${student.id}' })" class="btn-danger">
+                                                    <i class="fas fa-trash"></i> Sil
+                                                </button>
+                                            </td>
+                                        ` : ''}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+                </div>
+            `;
+        }
+
+        // --- Öğrenci Detay Sayfası ---
+        function renderStudentDetailsPage() {
+            // Staff users cannot access this page, handled by navigateTo
+            if (appState.userRole === 'staff') {
+                navigateTo('dashboard');
+                return;
+            }
+
+            const student = appState.selectedStudent;
+            if (!student) {
+                appContainer.innerHTML = '<p class="text-center text-lg text-gray-600 mt-20">Öğrenci bulunamadı.</p>';
+                return;
+            }
+
+            const studentPayments = appState.payments.filter(p => p.studentId === student.id)
+                .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            let totalStudentExpected = 0;
+            let totalStudentPaid = 0;
+            studentPayments.forEach(p => {
+                totalStudentExpected += p.amount;
+                totalStudentPaid += p.paidAmount || 0;
+            });
+            const totalStudentUnpaid = totalStudentExpected - totalStudentPaid;
+
+            appContainer.innerHTML = `
+                ${getNavbarHtml()}
+
+                <div class="card mb-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <h2 class="text-2xl font-bold text-indigo-600">Öğrenci Bilgileri: ${student.name} ${student.surname}</h2>
+                        ${appState.userRole === 'admin' ? `
+                            <div class="flex space-x-2 mt-2 md:mt-0">
+                                <button onclick="openModal('addStudent', ${JSON.stringify(student).replace(/"/g, '&quot;')})" class="btn-info"><i class="fas fa-edit mr-2"></i>Öğrenciyi Düzenle</button>
+                                <button onclick="openModal('confirmDelete', { type: 'student', id: '${student.id}' })" class="btn-danger"><i class="fas fa-trash mr-2"></i>Öğrenciyi Sil</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                        <p><strong>Sınıfı:</strong> ${student.class}</p>
+                        <p><strong>Doğum Tarihi:</strong> ${formatDate(student.dob)}</p>
+                        <p><strong>Anne Adı:</strong> ${student.motherName || '-'}</p>
+                        <p><strong>Baba Adı:</strong> ${student.fatherName || '-'}</p>
+                        <p><strong>Telefon Numarası:</strong> ${student.phone}</p>
+                        <p><strong>Aylık Ödeme Tutarı:</strong> ${formatCurrency(student.monthlyFee)}</p>
+                        <p><strong>Taksit Sayısı:</strong> ${student.installmentCount}</p>
+                        <p><strong>Kırtasiye Ödemesi:</strong> ${formatCurrency(student.stationeryFee || 0)}</p>
+                        <p><strong>Diğer Ödemeler:</strong> ${formatCurrency(student.otherFees || 0)}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="card bg-indigo-100 text-indigo-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Beklenen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalStudentExpected)}</p>
+                    </div>
+                    <div class="card bg-green-100 text-green-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Ödenen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalStudentPaid)}</p>
+                    </div>
+                    <div class="card bg-red-100 text-red-800">
+                        <h3 class="text-xl font-semibold mb-2">Toplam Ödenmeyen</h3>
+                        <p class="text-3xl font-bold">${formatCurrency(totalStudentUnpaid)}</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <h2 class="text-2xl font-bold text-indigo-600">Ödeme Geçmişi</h2>
+                        ${appState.userRole === 'admin' ? `
+                            <button onclick="openModal('addAdHocPayment', '${student.id}')" class="btn-primary mt-2 md:mt-0"><i class="fas fa-plus-circle mr-2"></i>Yeni Ödeme Ekle</button>
+                        ` : ''}
+                    </div>
+                    ${studentPayments.length === 0 ? '<p class="text-gray-600">Bu öğrenciye ait ödeme bulunmamaktadır.</p>' : `
+                        <table class="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4">Ödeme Kalemi</th>
+                                    <th class="py-3 px-4">Beklenen Tutar</th>
+                                    <th class="py-3 px-4">Ödenen Tutar</th>
+                                    <th class="py-3 px-4">Kalan Tutar</th>
+                                    <th class="py-3 px-4">Son Ödeme Tarihi</th>
+                                    <th class="py-3 px-4">Ödeme Tarihi</th>
+                                    <th class="py-3 px-4">Durum</th>
+                                    <th class="py-3 px-4">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${studentPayments.map(payment => `
+                                    <tr class="border-b border-gray-200">
+                                        <td class="py-3 px-4">${payment.type}</td>
+                                        <td class="py-3 px-4">${formatCurrency(payment.amount)}</td>
+                                        <td class="py-3 px-4">${formatCurrency(payment.paidAmount || 0)}</td>
+                                        <td class="py-3 px-4">${formatCurrency(payment.amount - (payment.paidAmount || 0))}</td>
+                                        <td class="py-3 px-4">${formatDate(payment.dueDate)}</td>
+                                        <td class="py-3 px-4">${payment.paidDate ? formatDate(payment.paidDate) : '-'}</td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${payment.isPaid ? 'bg-green-200 text-green-800' : (payment.paidAmount > 0 ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800')}">
+                                                ${payment.isPaid ? 'Ödendi' : (payment.paidAmount > 0 ? 'Kısmi Ödeme' : 'Ödenmedi')}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 space-x-2 flex flex-wrap gap-2">
+                                            <button onclick="updatePaymentStatus('${payment.id}', ${!payment.isPaid})" class="btn-success ${payment.isPaid ? 'opacity-50 cursor-not-allowed' : ''}" ${payment.isPaid ? 'disabled' : ''}>
+                                                <i class="fas fa-check"></i> Ödendi
+                                            </button>
+                                            ${appState.userRole === 'admin' ? `
+                                                <button onclick="openModal('editPayment', ${JSON.stringify(payment).replace(/"/g, '&quot;')})" class="btn-info">
+                                                    <i class="fas fa-edit"></i> Düzenle
+                                                </button>
+                                                <button onclick="openModal('confirmDelete', { type: 'payment', id: '${payment.id}' })" class="btn-danger">
+                                                    <i class="fas fa-trash"></i> Sil
+                                                </button>
+                                            ` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+                </div>
+            `;
+        }
+
+        // --- Sınıflar Sayfası ---
+        function renderClassesPage() {
+            const sortedClasses = [...appState.classes].sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+            const studentsInSelectedClass = appState.selectedClass
+                ? appState.students.filter(s => s.class === appState.selectedClass.name).sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }))
+                : [];
+
+            appContainer.innerHTML = `
+                ${getNavbarHtml()}
+
+                <div class="card mb-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <h2 class="text-2xl font-bold text-indigo-600">Sınıf Yönetimi</h2>
+                        ${appState.userRole === 'admin' ? `
+                            <button onclick="openModal('addClass')" class="btn-primary mt-2 md:mt-0"><i class="fas fa-plus-circle mr-2"></i>Yeni Sınıf Ekle</button>
+                        ` : ''}
+                    </div>
+                    ${sortedClasses.length === 0 ? '<p class="text-gray-600">Henüz kayıtlı sınıf bulunmamaktadır.</p>' : `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${sortedClasses.map(c => `
+                                <div class="bg-indigo-50 p-4 rounded-lg shadow-md flex justify-between items-center cursor-pointer hover:bg-indigo-100 transition" onclick="navigateTo('classes', '${c.id}')">
+                                    <span class="text-lg font-semibold text-indigo-800">${c.name}</span>
+                                    ${appState.userRole === 'admin' ? `
+                                        <div class="flex space-x-2">
+                                            <button onclick="event.stopPropagation(); openModal('editClass', ${JSON.stringify(c).replace(/"/g, '&quot;')})" class="btn-info btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="event.stopPropagation(); openModal('confirmDelete', { type: 'class', id: '${c.id}' })" class="btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+
+                ${appState.selectedClass ? `
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4 flex-wrap">
+                            <h2 class="text-2xl font-bold text-indigo-600">${appState.selectedClass.name} Sınıfı Öğrencileri</h2>
+                            <button onclick="exportClassStudentsToCsv('${appState.selectedClass.id}')" class="btn-primary mt-2 md:mt-0"><i class="fas fa-file-excel mr-2"></i>Excel'e Aktar</button>
+                        </div>
+                        ${studentsInSelectedClass.length === 0 ? `<p class="text-gray-600">${appState.selectedClass.name} sınıfında öğrenci bulunmamaktadır.</p>` : `
+                            <table class="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
+                                <thead>
+                                    <tr>
+                                        <th class="py-3 px-4">Adı Soyadı</th>
+                                        <th class="py-3 px-4">Sınıfı</th>
+                                        <th class="py-3 px-4">Doğum Tarihi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${studentsInSelectedClass.map(student => `
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-3 px-4">${student.name} ${student.surname}</td>
+                                            <td class="py-3 px-4">${student.class}</td>
+                                            <td class="py-3 px-4">${formatDate(student.dob)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `}
+                    </div>
+                ` : `<p class="text-gray-600">Yukarıdan bir sınıf seçerek öğrencilerini listeleyebilirsiniz.</p>`}
+            `;
+        }
+
+        // --- Ayarlar Sayfası ---
+        function renderSettingsPage() {
+            // Staff users cannot access this page, handled by navigateTo
+            if (appState.userRole === 'staff') {
+                navigateTo('dashboard');
+                return;
+            }
+
+            appContainer.innerHTML = `
+                ${getNavbarHtml()}
+
+                <div class="card mb-6">
+                    <h2 class="text-2xl font-bold text-indigo-600 mb-4">Okul Ayarları</h2>
+                    <div class="mb-4">
+                        <label for="schoolNameInput" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                        <input type="text" id="schoolNameInput" value="${appState.schoolName}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <button onclick="handleUpdateSchoolName()" class="btn-primary"><i class="fas fa-save mr-2"></i>Okul Adını Kaydet</button>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-bold text-indigo-600 mb-4">Veri Yedekleme ve Geri Yükleme</h2>
+                    <p class="text-gray-700 mb-4">Tüm uygulama verilerinizi yerel bilgisayarınıza yedekleyebilir veya daha önce aldığınız bir yedekten geri yükleyebilirsiniz.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="backupData()" class="btn-primary"><i class="fas fa-download mr-2"></i>Verileri Yedekle</button>
+                        <button onclick="openModal('restoreBackup')" class="btn-secondary"><i class="fas fa-upload mr-2"></i>Yedekten Geri Yükle</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Form Gönderim İşleyicileri ---
+        async function handleSaveStudent(event) {
+            event.preventDefault();
+            const studentId = appState.modalData ? appState.modalData.id : null;
+
+            const studentData = {
+                name: document.getElementById('studentName').value,
+                surname: document.getElementById('studentSurname').value,
+                class: document.getElementById('studentClass').value,
+                motherName: document.getElementById('motherName').value,
+                fatherName: document.getElementById('fatherName').value,
+                dob: document.getElementById('dob').value,
+                phone: document.getElementById('phone').value,
+                monthlyFee: parseFloat(document.getElementById('monthlyFee').value || 0),
+                installmentCount: parseInt(document.getElementById('installmentCount').value || 1),
+                stationeryFee: parseFloat(document.getElementById('stationeryFee').value || 0),
+                otherFees: parseFloat(document.getElementById('otherFees').value || 0)
+            };
+
+            if (studentId) {
+                await updateStudent(studentId, studentData);
+            } else {
+                await addStudent(studentData);
+            }
+        }
+
+        async function handleUpdatePayment(event) {
+            event.preventDefault();
+            const paymentId = appState.modalData.id;
+            const updatedData = {
+                amount: parseFloat(document.getElementById('editAmount').value),
+                paidAmount: parseFloat(document.getElementById('editPaidAmount').value),
+                paidDate: document.getElementById('editPaidDate').value,
+                isPaid: parseFloat(document.getElementById('editPaidAmount').value) >= parseFloat(document.getElementById('editAmount').value) // Tamamı ödendiyse isPaid true yap
+            };
+            await updatePayment(paymentId, updatedData);
+        }
+
+        async function handleAddAdHocPayment(event) {
+            event.preventDefault();
+            const studentId = appState.modalData; // modalData burada student id'si
+            const paymentData = {
+                type: document.getElementById('adhocPaymentType').value,
+                amount: parseFloat(document.getElementById('adhocAmount').value),
+                dueDate: document.getElementById('adhocDueDate').value,
+            };
+            await addAdHocPayment(studentId, paymentData);
+        }
+
+        async function handleAddClass(event) {
+            event.preventDefault();
+            const className = document.getElementById('className').value;
+            await addClass(className);
+        }
+
+        async function handleEditClass(event) {
+            event.preventDefault();
+            const classId = appState.modalData.id;
+            const newName = document.getElementById('editClassName').value;
+            await updateClass(classId, newName);
+        }
+
+        async function handleUpdateSchoolName() {
+            const newSchoolName = document.getElementById('schoolNameInput').value;
+            await updateSchoolName(newSchoolName);
+        }
+
+        function handleLogout() {
+            // Gerçek bir uygulamada Firebase signOut() kullanılmalı
+            auth.signOut().then(() => {
+                appState.userRole = null; // Rolü sıfırla
+                navigateTo('login');
+            }).catch((error) => {
+                console.error("Çıkış yapılırken hata oluştu:", error);
+                showMessage("Çıkış yapılırken bir hata oluştu.", "error");
+            });
+        }
+
+        // --- PDF Makbuz Oluşturma ---
+        async function generateReceiptPdf(paymentId) {
+            showLoading();
+            try {
+                const payment = appState.payments.find(p => p.id === paymentId);
+                if (!payment) {
+                    showMessage("Makbuz oluşturulacak ödeme bulunamadı.", "error");
+                    return;
+                }
+                const student = appState.students.find(s => s.id === payment.studentId);
+                if (!student) {
+                    showMessage("Makbuz oluşturulacak öğrenci bulunamadı.", "error");
+                    return;
+                }
+
+                const todayDate = new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                // Öğrencinin tüm ödemelerini al ve ödenen/ödenmeyen taksitleri hesapla
+                const studentPayments = appState.payments.filter(p => p.studentId === student.id);
+                let totalPaidAmount = 0;
+                let totalUnpaidAmount = 0;
+                let paidInstallmentsHtml = '';
+                let unpaidInstallmentsHtml = '';
+
+                studentPayments.forEach(p => {
+                    if (p.isPaid) {
+                        totalPaidAmount += p.paidAmount || 0;
+                        paidInstallmentsHtml += `<div class="receipt-item"><span>${p.type} (${formatDate(p.dueDate)})</span><span>${formatCurrency(p.paidAmount || 0)}</span></div>`;
+                    } else {
+                        totalUnpaidAmount += p.amount - (p.paidAmount || 0);
+                        unpaidInstallmentsHtml += `<div class="receipt-item"><span>${p.type} (${formatDate(p.dueDate)})</span><span>${formatCurrency(p.amount - (p.paidAmount || 0))}</span></div>`;
+                    }
+                });
+
+                const singleReceiptContent = `
+                    <div class="receipt-header">
+                        <h1>${appState.schoolName}</h1>
+                        <p>Ödeme Makbuzu</p>
+                        <p>Tarih: ${todayDate}</p>
+                    </div>
+
+                    <div class="receipt-section">
+                        <h3>Öğrenci Bilgileri</h3>
+                        <div class="receipt-item"><span>Adı Soyadı:</span><span>${student.name} ${student.surname}</span></div>
+                        <div class="receipt-item"><span>Sınıfı:</span><span>${student.class}</span></div>
+                        <div class="receipt-item"><span>Telefon:</span><span>${student.phone}</span></div>
+                    </div>
+
+                    <div class="receipt-section">
+                        <h3>Bu Ödeme</h3>
+                        <div class="receipt-item"><span>Ödeme Kalemi:</span><span>${payment.type}</span></div>
+                        <div class="receipt-item"><span>Ödenen Tutar:</span><span>${formatCurrency(payment.paidAmount || 0)}</span></div>
+                        <div class="receipt-item"><span>Ödeme Tarihi:</span><span>${payment.paidDate ? formatDate(payment.paidDate) : todayDate}</span></div>
+                    </div>
+
+                    <div class="receipt-section">
+                        <h3>Ödenen Taksitler</h3>
+                        ${paidInstallmentsHtml || '<p class="text-gray-500 text-sm">Henüz ödenen taksit bulunmamaktadır.</p>'}
+                    </div>
+
+                    <div class="receipt-section">
+                        <h3>Ödenmeyen Taksitler</h3>
+                        ${unpaidInstallmentsHtml || '<p class="text-gray-500 text-sm">Ödenmeyen taksit bulunmamaktadır.</p>'}
+                    </div>
+
+                    <div class="receipt-summary">
+                        <div class="receipt-item"><span>Toplam Ödenen Miktar:</span><span>${formatCurrency(totalPaidAmount)}</span></div>
+                        <div class="receipt-item"><span>Toplam Ödenmeyen Miktar:</span><span>${formatCurrency(totalUnpaidAmount)}</span></div>
+                    </div>
+
+                    <div class="receipt-footer">
+                        <p>Teşekkür ederiz!</p>
+                    </div>
+                `;
+
+                const twoReceiptsHtml = `
+                    <div class="two-receipts-container">
+                        <div class="receipt-container">${singleReceiptContent}</div>
+                        <div class="receipt-container">${singleReceiptContent}</div>
+                    </div>
+                `;
+
+                receiptTemplateDiv.innerHTML = twoReceiptsHtml;
+                receiptTemplateDiv.style.display = 'block'; // Make it visible for html2canvas
+
+                const canvas = await html2canvas(receiptTemplateDiv, { scale: 2 }); // Scale for better quality
+                const imgData = canvas.toDataURL('image/png');
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape', // Yatay A4
+                    unit: 'px',
+                    format: 'a4'
+                });
+
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`Makbuz_${student.name}_${student.surname}_${new Date().toLocaleDateString('tr-TR')}.pdf`);
+
+                receiptTemplateDiv.style.display = 'none'; // Hide it again
+                receiptTemplateDiv.innerHTML = ''; // Clear content
+                showMessage("Makbuz başarıyla oluşturuldu ve indirildi!", "success");
+
+            } catch (error) {
+                console.error("Makbuz oluşturulurken hata oluştu:", error);
+                showMessage("Makbuz oluşturulurken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- CSV Export ---
+        async function exportClassStudentsToCsv(classId) {
+            showLoading();
+            try {
+                const selectedClass = appState.classes.find(c => c.id === classId);
+                if (!selectedClass) {
+                    showMessage("Sınıf bulunamadı.", "error");
+                    return;
+                }
+
+                const studentsToExport = appState.students.filter(s => s.class === selectedClass.name)
+                    .sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+
+                if (studentsToExport.length === 0) {
+                    showMessage("Aktarılacak öğrenci bulunamadı.", "info");
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Add BOM for Turkish characters
+                csvContent += "Adı,Soyadı,Sınıfı,Doğum Tarihi,Anne Adı,Baba Adı,Telefon Numarası\n";
+
+                studentsToExport.forEach(student => {
+                    const row = [
+                        student.name,
+                        student.surname,
+                        student.class,
+                        formatDate(student.dob),
+                        student.motherName || '',
+                        student.fatherName || '',
+                        student.phone
+                    ].map(field => {
+                        // Escape double quotes by doubling them, then wrap in double quotes
+                        const escapedField = String(field).replace(/"/g, '""');
+                        return `"${escapedField}"`;
+                    }).join(',');
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `${selectedClass.name}_Ogrenciler_${new Date().toLocaleDateString('tr-TR')}.csv`);
+                document.body.appendChild(link); // Required for Firefox
+                link.click();
+                document.body.removeChild(link); // Clean up
+                showMessage("Sınıf listesi başarıyla Excel'e aktarıldı! (CSV formatında, Excel ile açabilirsiniz)", "success");
+
+            } catch (error) {
+                console.error("Excel'e aktarılırken hata oluştu:", error);
+                showMessage("Excel'e aktarılırken bir hata oluştu.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+
+        // Global olarak erişilebilir hale getirilen fonksiyonlar
+        window.navigateTo = navigateTo;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.updatePaymentStatus = updatePaymentStatus;
+        window.changeMonth = changeMonth;
+        window.filterStudentsDashboard = filterStudentsDashboard;
+        window.handleSaveStudent = handleSaveStudent;
+        window.handleUpdatePayment = handleUpdatePayment;
+        window.handleAddAdHocPayment = handleAddAdHocPayment;
+        window.handleAddClass = handleAddClass;
+        window.handleEditClass = handleEditClass;
+        window.handleUpdateSchoolName = handleUpdateSchoolName;
+        window.handleLogout = handleLogout;
+        window.generateReceiptPdf = generateReceiptPdf;
+        window.exportClassStudentsToCsv = exportClassStudentsToCsv;
+        window.deleteClass = deleteClass;
+        window.backupData = backupData;
+        window.handleRestoreBackup = handleRestoreBackup;
+
+        // Uygulamayı başlat
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
