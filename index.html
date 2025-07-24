@@ -291,13 +291,15 @@
 
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase yapılandırma bilgilerinizi buraya yapıştırın.
-        // Firebase konsolunuzdan aldığınız firebaseConfig objesini kullanın.
-const firebaseConfig = {
+        // Bu değerler Canvas ortamında otomatik olarak sağlanır.
+        // Eğer bu uygulamayı harici bir ortamda (örn: Netlify) dağıtıyorsanız,
+        // bu yer tutucuları kendi Firebase projenizin gerçek bilgileriyle DEĞİŞTİRMENİZ GEREKİR.
+       const firebaseConfig = {
   apiKey: "AIzaSyCotSaLl6RGbgWfxQ7ipKqlLrQSBIxfF8Q",
   authDomain: "anaokuluodeme.firebaseapp.com",
   projectId: "anaokuluodeme",
@@ -305,9 +307,12 @@ const firebaseConfig = {
   messagingSenderId: "50092621825",
   appId: "1:50092621825:web:5b0d9013b277b750144000"
 };
+
         // Firebase Firestore koleksiyonları için kullanılacak uygulama kimliği
-        // Genellikle firebaseConfig.appId ile aynı olabilir veya proje bazında benzersiz bir string kullanabilirsiniz.
-        const appId = firebaseConfig.appId; // Firebase App ID'nizi kullanın
+        // Bu değer Canvas ortamında otomatik olarak sağlanır.
+        // Eğer bu uygulamayı harici bir ortamda dağıtıyorsanız,
+        // bu yer tutucuyu kendi Firebase App ID'nizle DEĞİŞTİRMENİZ GEREKİR.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
 
         let app;
         let db;
@@ -649,7 +654,12 @@ const firebaseConfig = {
 
                 // initialAuthToken Canvas ortamına özeldir, harici dağıtımda kullanılmaz.
                 // Bu nedenle doğrudan anonim olarak oturum açmayı deniyoruz.
-                await signInAnonymously(auth);
+                // Eğer __initial_auth_token tanımlıysa onu kullan, yoksa anonim olarak oturum aç.
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
