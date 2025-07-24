@@ -299,14 +299,14 @@
         // Bu değerler Canvas ortamında otomatik olarak sağlanır.
         // Eğer bu uygulamayı harici bir ortamda (örn: Netlify) dağıtıyorsanız,
         // bu yer tutucuları kendi Firebase projenizin gerçek bilgileriyle DEĞİŞTİRMENİZ GEREKİR.
-       const firebaseConfig = {
-  apiKey: "AIzaSyCotSaLl6RGbgWfxQ7ipKqlLrQSBIxfF8Q",
-  authDomain: "anaokuluodeme.firebaseapp.com",
-  projectId: "anaokuluodeme",
-  storageBucket: "anaokuluodeme.firebasestorage.app",
-  messagingSenderId: "50092621825",
-  appId: "1:50092621825:web:5b0d9013b277b750144000"
-};
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyCotSaLl6RGbgWfxQ7ipKqlLrQSBIxfF8Q",
+            authDomain: "anaokuluodeme.firebaseapp.com",
+            projectId: "anaokuluodeme",
+            storageBucket: "anaokuluodeme.firebasestorage.app",
+            messagingSenderId: "50092621825",
+            appId: "1:50092621825:web:5b0d9013b277b750144000"
+        };
 
         // Firebase Firestore koleksiyonları için kullanılacak uygulama kimliği
         // Bu değer Canvas ortamında otomatik olarak sağlanır.
@@ -1072,6 +1072,7 @@
             } catch (error) {
                 console.error("Geri yükleme sırasında hata oluştu:", error);
                 showMessage("Geri yükleme sırasında bir hata oluştu.", "error");
+            } finally {
                 hideLoading();
             }
         }
