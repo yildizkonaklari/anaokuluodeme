@@ -291,12 +291,16 @@
 
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-        // Firebase yapılandırma bilgilerinizi buraya yapıştırın.
-        // Firebase konsolunuzdan aldığınız firebaseConfig objesini kullanın.
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCotSaLl6RGbgWfxQ7ipKqlLrQSBIxfF8Q",
   authDomain: "anaokuluodeme.firebaseapp.com",
@@ -635,6 +639,13 @@ const app = initializeApp(firebaseConfig);
 
         async function initializeFirebase() {
             try {
+                // Firebase uygulamasının zaten başlatılıp başlatılmadığını kontrol et
+                if (app) {
+                    console.warn("Firebase uygulaması zaten başlatıldı. Yeniden başlatma atlanıyor.");
+                    hideLoading();
+                    return;
+                }
+
                 showLoading();
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
