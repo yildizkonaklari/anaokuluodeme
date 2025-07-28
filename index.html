@@ -309,7 +309,9 @@
     appId: "1:577030418704:web:61b8f41b1390851a5bb595",
     measurementId: "G-8EH263JF1N"
   };
-
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
         // Firebase Firestore koleksiyonları için kullanılacak uygulama kimliği
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
 
