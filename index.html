@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anaokulu Ödeme Takip Sistemi</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN - Not: Üretim ortamında CDN yerine Tailwind CLI veya PostCSS eklentisi kullanılması önerilir. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -276,8 +276,7 @@
             max-width: 45%; /* Adjust to fit two side by side */
             box-shadow: none; /* Remove individual shadows for cleaner PDF */
             border: 1px solid #eee; /* Light border for separation in PDF */
-        }
-    </style>
+        </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div id="app-container" class="container mx-auto p-4">
@@ -294,12 +293,11 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
- 
-        // Import the functions you need from the SDKs you need
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
+        // Firebase yapılandırma bilgileri
+        // Bu değerler Canvas ortamında otomatik olarak sağlanır.
+        // Eğer bu uygulamayı harici bir ortamda (örn: Netlify) dağıtıyorsanız,
+        // aşağıdaki değerlerin kendi Firebase projenizin gerçek bilgileriyle eşleştiğinden emin olun.
   // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
@@ -312,12 +310,13 @@
     measurementId: "G-8EH263JF1N"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-        let app;
-        let db;
-        let auth;
+        // Firebase Firestore koleksiyonları için kullanılacak uygulama kimliği
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
+
+        // Firebase servis değişkenleri
+        let app = null;
+        let db = null;
+        let auth = null;
         let userId = null;
         let isAuthReady = false;
 
@@ -642,7 +641,8 @@
         async function initializeFirebase() {
             try {
                 // Firebase uygulamasının zaten başlatılıp başlatılmadığını kontrol et
-                if (app) {
+                // Bu global bayrak, betik bloğu birden fazla kez çalışsa bile initializeApp'in sadece bir kez çağrılmasını sağlar.
+                if (window.firebaseAppInitialized) {
                     console.warn("Firebase uygulaması zaten başlatıldı. Yeniden başlatma atlanıyor.");
                     hideLoading();
                     return;
@@ -652,6 +652,7 @@
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                window.firebaseAppInitialized = true; // Başlatma başarılı olduğunda bayrağı ayarla
 
                 // initialAuthToken Canvas ortamına özeldir, harici dağıtımda kullanılmaz.
                 // Bu nedenle doğrudan anonim olarak oturum açmayı deniyoruz.
